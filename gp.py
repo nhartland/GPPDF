@@ -16,12 +16,12 @@ pdfs  = lhapdf.mkPDFs(prior)
 pdfs  = pdfs[1:]  # Skip replica-0
 
 # Number of active flavours at initial scale
-nfl  = 4
-npdf = 2*nfl + 1
-flavours = range(-nfl, nfl+1)
+nfl  = lh.NFL
+flavours = lh.FLAVOURS
+npdf = len(flavours)
 assert(len(flavours) == npdf)
 labels = {-6: "tbar", -5: "bbar", -4: "cbar", -3: "sbar", -2: "dbar", -1: "ubar",
-           0: "g", 1: "u", 2: "u", 3: "s", 4: "c", 5: "b", 7: "t"}
+           21: "g", 1: "u", 2: "u", 3: "s", 4: "c", 5: "b", 7: "t"}
 
 # Kinematics
 Q0 = lh.QGRID[0]
@@ -60,7 +60,9 @@ for ipdf, pdf in enumerate(flavours):
 #
 
 
-lh.print_lhapdf_header(ngen_gp, nfl)
+lh.print_lhapdf_header(ngen_gp)
+for igp in range(ngen_gp):
+    lh.print_lhapdf_replica(igp, gp_values[igp])
 
 #for rep in gluon_xfs.T:
 #    ax.plot(xs, rep, alpha=0.1, color='b')
