@@ -5,38 +5,66 @@ import numpy as np
 import matplotlib.pyplot as plt
 import knn_divergence as knn
 import scipy
+import lh
 
-Q0 = 2
-# prior = "NNPDF31_nnlo_as_0118_1000"
+# Number of gaussian processes
+ngen_gp = 100
+
+# Prior PDF
 prior = "180307-nh-002"
-pdfs = lhapdf.mkPDFs(prior)
-pdfs = pdfs[1:]
+pdfs  = lhapdf.mkPDFs(prior)
+pdfs  = pdfs[1:]  # Skip replica-0
 
-# Filling a numpy 2D array with xf(x,Q) samples
-xs = [x for x in np.logspace(-5, 0, 50)]
-gluon_xfs = np.empty([len(xs), len(pdfs)])
+# Number of active flavours at initial scale
+nfl  = 4
+npdf = 2*nfl + 1
+flavours = range(-nfl, nfl+1)
+assert(len(flavours) == npdf)
+labels = {-6: "tbar", -5: "bbar", -4: "cbar", -3: "sbar", -2: "dbar", -1: "ubar",
+           0: "g", 1: "u", 2: "u", 3: "s", 4: "c", 5: "b", 7: "t"}
+
+# Kinematics
+Q0 = lh.QGRID[0]
+xs = lh.XGRID
+nx = len(xs)
+
+pdf_values = np.empty([npdf*nx, len(pdfs)])
 for irep, rep in enumerate(pdfs):
-    for ix, x in enumerate(xs):
-        gluon_xfs[ix][irep] = rep.xfxQ(0, x, Q0*Q0)
+    for ipdf, pdf in enumerate(flavours):
+        for ix, x in enumerate(xs):
+            pdf_values[nx*ipdf + ix][irep] = rep.xfxQ(pdf, x, Q0*Q0)
 
-mean       = np.mean(gluon_xfs, axis=1)
-covariance = np.cov(gluon_xfs)
+mean       = np.mean(pdf_values, axis=1)
+covariance = np.cov(pdf_values)
 error      = np.sqrt(np.diagonal(covariance))
 
-# red dashes, blue squares and green triangles
-fig, ax = plt.subplots()
-#ax.plot(xs, mean)
-#ax.fill_between(xs, mean-error, mean+error)
-ax.set_xscale('log')
-
-for rep in gluon_xfs.T:
-    ax.plot(xs, rep, alpha=0.1, color='b')
-
-ngen_gp = 100
-gluon_gp = np.empty([ngen_gp, len(xs)])
+# Generate gaussian processes
+gp_values = np.empty([ngen_gp, npdf*nx])  # Generated transposed w.r.t pdf_values for ease
 for i in range(0, ngen_gp):
-    gluon_gp[i][:] = np.random.multivariate_normal(mean, covariance)
-    ax.plot(xs, gluon_gp[i], alpha=0.1, color='r')
+    gp_values[i][:] = np.random.multivariate_normal(mean, covariance)
+
+# Plot PDFs
+for ipdf, pdf in enumerate(flavours):
+    fig, ax = plt.subplots()
+    mslice = mean[ipdf*nx:(ipdf+1)*nx]
+    eslice = error[ipdf*nx:(ipdf+1)*nx]
+    ax.plot(xs, mslice)
+    ax.fill_between(xs, mslice-eslice, mslice+eslice)
+
+    for rep in gp_values:
+        gpslice = rep[ipdf*nx:(ipdf+1)*nx]
+        ax.plot(xs, gpslice, alpha=0.1, color='r')
+
+    ax.set_xscale('log')
+    fig.savefig(f'pdf_{labels[pdf]}.pdf')
+#
+
+
+lh.print_lhapdf_header(ngen_gp, nfl)
+
+#for rep in gluon_xfs.T:
+#    ax.plot(xs, rep, alpha=0.1, color='b')
+#
 
 #gluon_gp = gluon_gp.T
 #kurtosis1   = scipy.stats.kurtosis(gluon_xfs, axis=1)
@@ -57,4 +85,4 @@ for i in range(0, ngen_gp):
 #ax.plot(xs, KLD)
 #ax.set_xscale('log')
 
-plt.show()
+#plt.show()
