@@ -3,8 +3,6 @@
 import lhapdf
 import numpy as np
 import matplotlib.pyplot as plt
-import knn_divergence as knn
-import scipy
 import lh
 
 # Number of gaussian processes
@@ -32,7 +30,7 @@ pdf_values = np.empty([npdf*nx, len(pdfs)])
 for irep, rep in enumerate(pdfs):
     for ipdf, pdf in enumerate(flavours):
         for ix, x in enumerate(xs):
-            pdf_values[nx*ipdf + ix][irep] = rep.xfxQ(pdf, x, Q0*Q0)
+            pdf_values[nx*ipdf + ix][irep] = rep.xfxQ(pdf, x, Q0)
 
 mean       = np.mean(pdf_values, axis=1)
 covariance = np.cov(pdf_values)
@@ -57,34 +55,8 @@ for ipdf, pdf in enumerate(flavours):
 
     ax.set_xscale('log')
     fig.savefig(f'pdf_{labels[pdf]}.pdf')
-#
 
 
 lh.print_lhapdf_header(ngen_gp)
 for igp in range(ngen_gp):
     lh.print_lhapdf_replica(igp, gp_values[igp])
-
-#for rep in gluon_xfs.T:
-#    ax.plot(xs, rep, alpha=0.1, color='b')
-#
-
-#gluon_gp = gluon_gp.T
-#kurtosis1   = scipy.stats.kurtosis(gluon_xfs, axis=1)
-#kurtosis2   = scipy.stats.kurtosis(gluon_gp, axis=1)
-#
-#KLD = []
-#for i in range(len(xs)):
-#    slice1 = np.asarray([gluon_xfs[i]]).T
-#    slice2 = np.asarray([gluon_gp[i]]).T
-#    kl = knn.naive_estimator(slice1, slice2, k=1)
-#    KLD.append(kl)
-#
-## print(knn.naive_estimator(gluon_gp, gluon_xfs))
-#
-#fig, ax = plt.subplots()
-#ax.plot(xs, kurtosis1)
-#ax.plot(xs, kurtosis2)
-#ax.plot(xs, KLD)
-#ax.set_xscale('log')
-
-#plt.show()

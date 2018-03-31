@@ -5,7 +5,7 @@ import numpy as np
 from jinja2 import Environment, FileSystemLoader
 
 QGRID = [1.64, 1.66]
-XGRID = [x for x in np.logspace(-9, -0.1, 100)]
+XGRID = [x for x in np.logspace(-9, 0, 100)]
 NX = len(XGRID)
 
 NFL = 4
