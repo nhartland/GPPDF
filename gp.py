@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import lh
 
 # Number of gaussian processes
-ngen_gp = 100
+ngen_gp = 1000
 
 # Prior PDF
 prior = "180307-nh-002"
@@ -26,19 +26,23 @@ Q0 = lh.QGRID[0]
 xs = lh.XGRID
 nx = len(xs)
 
+print("Reading prior PDF values")
 pdf_values = np.empty([npdf*nx, len(pdfs)])
 for irep, rep in enumerate(pdfs):
     for ipdf, pdf in enumerate(flavours):
         for ix, x in enumerate(xs):
             pdf_values[nx*ipdf + ix][irep] = rep.xfxQ(pdf, x, Q0)
 
+print("Computing stats")
 mean       = np.mean(pdf_values, axis=1)
 covariance = np.cov(pdf_values)
 error      = np.sqrt(np.diagonal(covariance))
 
 # Generate gaussian processes
+print("Generating GPs")
 gp_values = np.empty([ngen_gp, npdf*nx])  # Generated transposed w.r.t pdf_values for ease
 for i in range(0, ngen_gp):
+    print(f"Generated: {i}/{ngen_gp}")
     gp_values[i][:] = np.random.multivariate_normal(mean, covariance)
 
 # Plot PDFs
@@ -57,6 +61,8 @@ for ipdf, pdf in enumerate(flavours):
     fig.savefig(f'pdf_{labels[pdf]}.pdf')
 
 
+print("Exporting PDF")
 lh.print_lhapdf_header(ngen_gp)
 for igp in range(ngen_gp):
     lh.print_lhapdf_replica(igp, gp_values[igp])
+lh.generate_replica_zero()
