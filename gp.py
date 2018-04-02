@@ -9,7 +9,8 @@ import lh
 ngen_gp = 1000
 
 # Prior PDF
-prior = "180307-nh-002"
+# prior = "180307-nh-002"
+prior = "171113-nh-002"
 pdfs  = lhapdf.mkPDFs(prior)
 pdfs  = pdfs[1:]  # Skip replica-0
 
@@ -38,12 +39,25 @@ mean       = np.mean(pdf_values, axis=1)
 covariance = np.cov(pdf_values)
 error      = np.sqrt(np.diagonal(covariance))
 
+# Condition covariance matrix a bit
+# https://stackoverflow.com/questions/41515522/numpy-positive-semi-definite-warning
+# This is probably only neccesary because I'm including x=1 in the matrix
+# but x=1 is needed in the matrix for LHAPDF reasons..
+min_eig = np.min(np.real(np.linalg.eigvals(covariance)))
+while min_eig < 0:
+    print("Covariance matrix not positive-semidefinite")
+    print(min_eig)
+    covariance -= 100*min_eig * np.eye(*covariance.shape)
+    min_eig = np.min(np.real(np.linalg.eigvals(covariance)))
+    print(f"New min eig: {min_eig}")
+
 # Generate gaussian processes
 print("Generating GPs")
 gp_values = np.empty([ngen_gp, npdf*nx])  # Generated transposed w.r.t pdf_values for ease
 for i in range(0, ngen_gp):
     print(f"Generated: {i}/{ngen_gp}")
     gp_values[i][:] = np.random.multivariate_normal(mean, covariance)
+    lh.print_lhapdf_replica(i, gp_values[i])
 
 # Plot PDFs
 for ipdf, pdf in enumerate(flavours):
@@ -61,8 +75,6 @@ for ipdf, pdf in enumerate(flavours):
     fig.savefig(f'pdf_{labels[pdf]}.pdf')
 
 
-print("Exporting PDF")
+print("Generating replica zero and writing header")
 lh.print_lhapdf_header(ngen_gp)
-for igp in range(ngen_gp):
-    lh.print_lhapdf_replica(igp, gp_values[igp])
 lh.generate_replica_zero()
