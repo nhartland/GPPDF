@@ -44,49 +44,40 @@ w, h = plt.figaspect(0.5)
 # Plot PDFs
 with PdfPages(f'plt_{gpdata["setname"]}.pdf') as output:
     for ipdf, pdf in enumerate(gpdata["flavours"]):
+        # Setup figure
+        fig = plt.figure(figsize=(w, h))
+        logax = fig.add_subplot(gs[0])
+        linax  = fig.add_subplot(gs[1])
 
-       # # Setup figure
-       # fig = plt.figure(figsize=(w, h))
-       # logax = fig.add_subplot(gs[0])
-       # linax  = fig.add_subplot(gs[1])
+        # Axis formatting
+        linax.set_xlim([0.1, 1])
+        logax.set_xlim([min(gpdata["xgrid"]), 0.1])
+        plt.setp(linax.get_yticklabels(), visible=False)
+        logax.set_xscale('log')
+        linax.xaxis.set_major_locator(MaxNLocator(5, prune='lower'))
 
-       # # Axis formatting
-       # linax.set_xlim([0.1, 1])
-       # logax.set_xlim([min(gpdata["xgrid"]), 0.1])
-       # plt.setp(linax.get_yticklabels(), visible=False)
-       # logax.set_xscale('log')
-       # linax.xaxis.set_major_locator(MaxNLocator(5, prune='lower'))
-
-       # for axis in fig.get_axes():
-       #     axis.xaxis.grid(True)
-       #     axis.yaxis.grid(True)
-       #     axis.set_ylim([-1, 5])
-
-        fig, ax = plt.subplots()
+        # GP Mean and standard-deviation
         mslice = gpdata["mean"][ipdf*nx:(ipdf+1)*nx]
         eslice = error[ipdf*nx:(ipdf+1)*nx]
-        ax.plot(xs, mslice+eslice, color='black', linestyle='--')
-        ax.plot(xs, mslice-eslice, color='black', linestyle='--', label="GP 1-sigma")
-        #ax.plot(xs, mslice)
-        #ax.fill_between(xs, mslice-eslice, mslice+eslice, color='black', alpha=0.1)
 
-        for irep in range(0, ngen_gp):
-            gpslice = gp_values[irep][ipdf*nx:(ipdf+1)*nx]
-            if irep == 0:
-                ax.plot(xs, gpslice, alpha=0.1, color='b', label="GP Samples")
-            else:
-                ax.plot(xs, gpslice, alpha=0.1, color='b')
+        for ax in fig.get_axes():
+            for irep in range(0, ngen_gp):
+                gpslice = gp_values[irep][ipdf*nx:(ipdf+1)*nx]
+                if irep == 0:
+                    ax.plot(xs, gpslice, alpha=0.1, color='b', label="GP Samples")
+                else:
+                    ax.plot(xs, gpslice, alpha=0.1, color='b')
+            ax.plot(xs, mslice+eslice, color='black', linestyle='--')
+            ax.plot(xs, mslice-eslice, color='black', linestyle='--', label="GP 1-sigma")
 
-        ax.legend(loc='best')
-        ax.set_xscale('log')
-        ax.set_xlabel('$x$')
-        ax.set_ylabel(f'$x${labels[pdf]}(x, Q={Q0})')
+        label = labels[pdf]
+        linax.legend(loc='best')
+        logax.set_ylabel(f'$x${label}(x, Q={Q0})')
+        fig.suptitle(f'Gaussian process sample of {label}(x, Q={Q0}) from {gpdata["prior"]}')
 
         output.savefig(fig)
 
-    # We can also set the file's metadata via the PdfPages object:
     d = output.infodict()
     d['Title'] = 'GPPDF plots'
     d['Author'] = 'Nathan Hartland'
-    d['CreationDate'] = datetime.datetime(2009, 11, 13)
-    d['ModDate'] = datetime.datetime.today()
+    d['CreationDate'] = datetime.datetime.today()
