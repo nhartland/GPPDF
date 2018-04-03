@@ -70,8 +70,12 @@ with PdfPages(f'plt_{gpdata["setname"]}.pdf') as output:
             ax.plot(xs, mslice+eslice, color='black', linestyle='--')
             ax.plot(xs, mslice-eslice, color='black', linestyle='--', label="GP 1-sigma")
 
+        # Add legend (without alpha)
+        leg = linax.legend(loc='best')
+        for lh in leg.legendHandles:
+            lh.set_alpha(1)
+
         label = labels[pdf]
-        linax.legend(loc='best')
         logax.set_ylabel(f'$x${label}(x, Q={Q0})')
         fig.suptitle(f'Gaussian process sample of {label}(x, Q={Q0}) from {gpdata["prior"]}')
 
