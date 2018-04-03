@@ -102,10 +102,8 @@ def print_lhapdf_header(ngen_gp):
         f.write(render)
 
 
-# No subgrids here for now
-# Need to add subgrids, otherwise something wierd is happening
 def print_lhapdf_replica(irep, data):
-    with open(fitname+'/'+fitname+f'_{irep+1:04d}.dat', 'w') as f:
+    with open(fitname+'/'+fitname+f'_{irep:04d}.dat', 'w') as f:
         f.write(f"PdfType: replica\nFormat: lhagrid1\nFromMCReplica: {irep}\n---\n")
         for x in XGRID:
             f.write(f'{x:.7E} ')
@@ -125,13 +123,3 @@ def print_lhapdf_replica(irep, data):
                     f.write(f'{point:.7E} ')
                 f.write('\n')
         f.write('---\n')
-
-
-def generate_replica_zero():
-    # `fitname` is not read from some other path
-    lhapdf.pathsPrepend(os.getcwd())
-    generatingPDF = PDF(fitname)
-    lhio.generate_replica0(generatingPDF)
-
-    # Test replica 0
-    lhapdf.mkPDF(fitname, 0)

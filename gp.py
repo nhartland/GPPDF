@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import lh
 
 # Number of gaussian processes
-ngen_gp = 2000
+ngen_gp = 1000
 
 # Prior PDF
 # prior = "180307-nh-002"
@@ -54,7 +54,6 @@ while min_eig < 0:
 # Generate gaussian processes
 print("Generating GPs")
 gp_values = np.random.multivariate_normal(mean, covariance, ngen_gp, 'raise')
-print(gp_values.size)
 
 # Plot PDFs
 for ipdf, pdf in enumerate(flavours):
@@ -72,8 +71,9 @@ for ipdf, pdf in enumerate(flavours):
     fig.savefig(f'pdf_{labels[pdf]}.pdf')
 
 
-print("Generating replica zero and writing header")
+print("Printing LHAPDF replicas")
 for i in range(0, ngen_gp):
-    lh.print_lhapdf_replica(i, gp_values[i])
+    lh.print_lhapdf_replica(i+1, gp_values[i])
+print("Printing replica zero and writing header")
+lh.print_lhapdf_replica(0, np.mean(gp_values, axis=0))
 lh.print_lhapdf_header(ngen_gp)
-lh.generate_replica_zero()
