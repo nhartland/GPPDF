@@ -10,9 +10,9 @@ ngen_gp = 1000
 
 # Prior PDF
 # prior = "180307-nh-002"
-prior = "171113-nh-002"
-pdfs  = lhapdf.mkPDFs(prior)
-pdfs  = pdfs[1:]  # Skip replica-0
+prior  = "171113-nh-002"
+pdfset = lhapdf.getPDFSet(prior)
+replicas  = lhapdf.mkPDFs(prior)[1:]
 
 # Number of active flavours at initial scale
 nfl  = lh.NFL
@@ -23,13 +23,13 @@ labels = {-6: "tbar", -5: "bbar", -4: "cbar", -3: "sbar", -2: "dbar", -1: "ubar"
            21: "g", 1: "u", 2: "u", 3: "s", 4: "c", 5: "b", 7: "t"}
 
 # Kinematics
-Q0 = lh.QGRID[0]
-xs = lh.XGRID
-nx = len(xs)
+Q0 = float(pdfset.get_entry("QMin"))
+xs, nx = lh.XGRID, lh.NX
+print(f"Sampling {nx} points at initial scale: {Q0} GeV")
 
 print("Reading prior PDF values")
-pdf_values = np.empty([npdf*nx, len(pdfs)])
-for irep, rep in enumerate(pdfs):
+pdf_values = np.empty([npdf*nx, len(replicas)])
+for irep, rep in enumerate(replicas):
     for ipdf, pdf in enumerate(flavours):
         for ix, x in enumerate(xs):
             pdf_values[nx*ipdf + ix][irep] = rep.xfxQ(pdf, x, Q0)
