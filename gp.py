@@ -3,10 +3,11 @@
 import lhapdf
 import numpy as np
 import matplotlib.pyplot as plt
-import lh
+import itertools
+from xg import XGRID
 
 # Number of gaussian processes
-ngen_gp = 1000
+ngen_gp = 100
 
 # Prior PDF
 # prior = "180307-nh-002"
@@ -15,24 +16,23 @@ pdfset = lhapdf.getPDFSet(prior)
 replicas  = pdfset.mkPDFs()[1:]
 
 # Number of active flavours at initial scale
-nfl  = lh.NFL
-flavours = lh.FLAVOURS
-npdf = len(flavours)
-assert(len(flavours) == npdf)
 labels = {-6: "tbar", -5: "bbar", -4: "cbar", -3: "sbar", -2: "dbar", -1: "ubar",
-           21: "g", 1: "u", 2: "u", 3: "s", 4: "c", 5: "b", 7: "t"}
+          21: "g", 1: "u", 2: "u", 3: "s", 4: "c", 5: "b", 7: "t"}
 
-# Kinematics
+# Available flavours
+flavour_string = pdfset.get_entry("Flavors").split(",")
+nfl, flavours = len(flavour_string), list(map(int, flavour_string))
+
+# Initial scale and x-grid
 Q0 = float(pdfset.get_entry("QMin"))
-xs, nx = lh.XGRID, lh.NX
-print(f"Sampling {nx} points at initial scale: {Q0} GeV")
+xs, nx = XGRID, len(XGRID)
 
-print("Reading prior PDF values")
-pdf_values = np.empty([npdf*nx, len(replicas)])
+print(f"Sampling {nx} x-points at initial scale: {Q0} GeV")
+grid_points = list(itertools.product(flavours, xs))
+pdf_values = np.empty([nfl*nx, len(replicas)])
 for irep, rep in enumerate(replicas):
-    for ipdf, pdf in enumerate(flavours):
-        for ix, x in enumerate(xs):
-            pdf_values[nx*ipdf + ix][irep] = rep.xfxQ(pdf, x, Q0)
+    for ipt, pt in enumerate(grid_points):
+        pdf_values[ipt][irep] = rep.xfxQ(pt[0], pt[1], Q0)
 
 print("Computing stats")
 mean       = np.mean(pdf_values, axis=1)
@@ -45,11 +45,12 @@ error      = np.sqrt(np.diagonal(covariance))
 # but x=1 is needed in the matrix for LHAPDF reasons..
 min_eig = np.min(np.real(np.linalg.eigvals(covariance)))
 while min_eig < 0:
-    print("Covariance matrix not positive-semidefinite")
-    print(min_eig)
+    print("WARNING: Covariance matrix not positive-semidefinite")
+    print(f"Minimum eigenvalue: {min_eig}")
+    print("Introducing regulator...")
     covariance -= 100*min_eig * np.eye(*covariance.shape)
     min_eig = np.min(np.real(np.linalg.eigvals(covariance)))
-    print(f"New min eig: {min_eig}")
+    print(f"New minimum: {min_eig}")
 
 # Generate gaussian processes
 print("Generating GPs")
@@ -71,9 +72,11 @@ for ipdf, pdf in enumerate(flavours):
     fig.savefig(f'pdf_{labels[pdf]}.pdf')
 
 
-print("Printing LHAPDF replicas")
-for i in range(0, ngen_gp):
-    lh.print_lhapdf_replica(i+1, gp_values[i])
-print("Printing replica zero and writing header")
-lh.print_lhapdf_replica(0, np.mean(gp_values, axis=0))
-lh.print_lhapdf_header(ngen_gp)
+np.savez_compressed(f'GP_{prior}_{len(gp_values)}',
+                    prior=prior,
+                    setname=f'GP_{prior}_{len(gp_values)}',
+                    mean=mean,
+                    covariance=covariance, Q0=Q0,
+                    flavours=flavours, xgrid=xs,
+                    samples=gp_values)
+
