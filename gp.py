@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import lh
 
 # Number of gaussian processes
-ngen_gp = 1000
+ngen_gp = 2000
 
 # Prior PDF
 # prior = "180307-nh-002"
@@ -53,11 +53,8 @@ while min_eig < 0:
 
 # Generate gaussian processes
 print("Generating GPs")
-gp_values = np.empty([ngen_gp, npdf*nx])  # Generated transposed w.r.t pdf_values for ease
-for i in range(0, ngen_gp):
-    print(f"Generated: {i}/{ngen_gp}")
-    gp_values[i][:] = np.random.multivariate_normal(mean, covariance)
-    lh.print_lhapdf_replica(i, gp_values[i])
+gp_values = np.random.multivariate_normal(mean, covariance, ngen_gp, 'raise')
+print(gp_values.size)
 
 # Plot PDFs
 for ipdf, pdf in enumerate(flavours):
@@ -67,8 +64,8 @@ for ipdf, pdf in enumerate(flavours):
     ax.plot(xs, mslice)
     ax.fill_between(xs, mslice-eslice, mslice+eslice)
 
-    for rep in gp_values:
-        gpslice = rep[ipdf*nx:(ipdf+1)*nx]
+    for irep in range(0, min(ngen_gp, 100)):
+        gpslice = gp_values[irep][ipdf*nx:(ipdf+1)*nx]
         ax.plot(xs, gpslice, alpha=0.1, color='r')
 
     ax.set_xscale('log')
@@ -76,5 +73,7 @@ for ipdf, pdf in enumerate(flavours):
 
 
 print("Generating replica zero and writing header")
+for i in range(0, ngen_gp):
+    lh.print_lhapdf_replica(i, gp_values[i])
 lh.print_lhapdf_header(ngen_gp)
 lh.generate_replica_zero()
