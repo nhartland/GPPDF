@@ -12,7 +12,7 @@ ngen_gp = 1000
 # prior = "180307-nh-002"
 prior  = "171113-nh-002"
 pdfset = lhapdf.getPDFSet(prior)
-replicas  = lhapdf.mkPDFs(prior)[1:]
+replicas  = pdfset.mkPDFs()[1:]
 
 # Number of active flavours at initial scale
 nfl  = lh.NFL
