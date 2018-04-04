@@ -30,19 +30,41 @@ import numpy as np
 from xg import XGRID
 
 
+def get_active_flavours(pdfset, Q0):
+    """
+     Trim pdfs if their thresholds are above the initial scale
+
+     LHAPDF sets aren't very helpful here in that it does not have separate
+     entries (typically) for mass and threshold. Have to assume q threshold is
+     identical to q mass.
+    """
+    flavour_string = pdfset.get_entry("Flavors").split(",")
+    flavours = list(map(int, flavour_string))
+    mc = float(pdfset.get_entry("MCharm"))
+    mb = float(pdfset.get_entry("MBottom"))
+    mt = float(pdfset.get_entry("MTop"))
+    if mc > Q0:
+        flavours = [f for f in flavours if abs(f) != 4]
+    if mb > Q0:
+        flavours = [f for f in flavours if abs(f) != 5]
+    if mt > Q0:
+        flavours = [f for f in flavours if abs(f) != 6]
+    return flavours
+
+
 def generate_gp(prior, nsamples):
     """ Generate the GP and `nsamples` GP samples from a `prior` PDF """
 
     pdfset = lhapdf.getPDFSet(prior)
     replicas  = pdfset.mkPDFs()[1:]
 
-    # Available flavours
-    flavour_string = pdfset.get_entry("Flavors").split(",")
-    nfl, flavours = len(flavour_string), list(map(int, flavour_string))
-
     # Initial scale and x-grid
     Q0 = float(pdfset.get_entry("QMin"))
     xs, nx = XGRID, len(XGRID)
+
+    # Available flavours
+    flavours = get_active_flavours(pdfset, Q0)
+    nfl = len(flavours)
 
     print(f"Sampling {nx} x-points at initial scale: {Q0} GeV")
     grid_points = list(itertools.product(flavours, xs))
@@ -56,8 +78,7 @@ def generate_gp(prior, nsamples):
     covariance = np.cov(pdf_values)
 
     # Condition covariance matrix a bit
-    # https://stackoverflow.com/questions/41515522/numpy-positive-semi-definite-warning
-    # This is due to including b in the covariance matrix
+    # Should use attempt on multivariate_normal instead
     min_eig = np.min(np.real(np.linalg.eigvals(covariance)))
     while min_eig < 0:
         print("WARNING: Covariance matrix not positive-semidefinite")
@@ -68,6 +89,7 @@ def generate_gp(prior, nsamples):
         print(f"New minimum: {min_eig}")
 
     # Generate gaussian processes
+    # Break this into ch. decomp etc for progress monitoring/parallelisation
     print("Generating GPs")
     gp_values = np.random.multivariate_normal(mean, covariance, nsamples, 'raise')
 

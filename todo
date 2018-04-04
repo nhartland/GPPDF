@@ -1,5 +1,4 @@
 - Ability to handle weighted PDF sets
 - Maybe introduce x=1 into LHAPDF grid
-- Don't include flavours where Q0 < mQ
 - Select between different x-grids
 - Basic README
