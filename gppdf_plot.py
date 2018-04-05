@@ -13,7 +13,7 @@ plt.style.use('seaborn-colorblind')
 
 # Number of active flavours at initial scale
 labels = {-6: "tbar", -5: "bbar", -4: "cbar", -3: "sbar", -2: "dbar", -1: "ubar",
-          21: "g", 1: "u", 2: "u", 3: "s", 4: "c", 5: "b", 7: "t"}
+          21: "g", 1: "u", 2: "d", 3: "s", 4: "c", 5: "b", 6: "t"}
 
 if len(argv) is not 2:
     print("Usage")

@@ -28,6 +28,7 @@ import argparse
 import itertools
 import numpy as np
 from xg import XGRID
+from knn_divergence import naive_estimator as kld
 
 
 def get_active_flavours(pdfset, Q0):
@@ -92,6 +93,9 @@ def generate_gp(prior, nsamples):
     # Break this into ch. decomp etc for progress monitoring/parallelisation
     print("Generating GPs")
     gp_values = np.random.multivariate_normal(mean, covariance, nsamples, 'raise')
+
+    # Compute KL divergence
+    print(f'KLD(GP|Prior): {kld(gp_values, pdf_values.T)}')
 
     outfile = f'GP_{prior}_{len(gp_values)}'
     np.savez_compressed(outfile,

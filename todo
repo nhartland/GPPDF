@@ -1,4 +1,6 @@
 - Ability to handle weighted PDF sets
 - Maybe introduce x=1 into LHAPDF grid
 - Select between different x-grids
+- Neater output
+- APFEL evolution
 - Basic README
