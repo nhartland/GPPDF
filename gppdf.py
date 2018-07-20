@@ -27,9 +27,18 @@ import lhapdf
 import argparse
 import itertools
 import numpy as np
-from xg import XGRID
-from knn_divergence import naive_estimator as kld
+from collections import namedtuple
 
+# Colouring
+from colorama import init
+init() # Init colours
+from colorama import Fore
+
+# Defines the x-grid used for sampling
+XGRID = np.logspace(-3,0,200)
+
+# Collection for GPPDFs
+GPPDF = namedtuple('GPPDF', ['prior', 'mean', 'covariance', 'Q0', 'flavours', 'xgrid'])
 
 def get_active_flavours(pdfset, Q0):
     """
@@ -52,9 +61,8 @@ def get_active_flavours(pdfset, Q0):
         flavours = [f for f in flavours if abs(f) != 6]
     return flavours
 
-
-def generate_gp(prior, nsamples):
-    """ Generate the GP and `nsamples` GP samples from a `prior` PDF """
+def generate_gp(prior):
+    """ Generate the GP from an input `prior` PDF """
 
     pdfset = lhapdf.getPDFSet(prior)
     replicas  = pdfset.mkPDFs()[1:]
@@ -67,7 +75,7 @@ def generate_gp(prior, nsamples):
     flavours = get_active_flavours(pdfset, Q0)
     nfl = len(flavours)
 
-    print(f"Sampling {nx} x-points at initial scale: {Q0} GeV")
+    print(f"{Fore.GREEN}Sampling {nx} x-points at initial scale: {Q0} GeV")
     grid_points = list(itertools.product(flavours, xs))
     pdf_values = np.empty([nfl*nx, len(replicas)])
     for irep, rep in enumerate(replicas):
@@ -82,6 +90,7 @@ def generate_gp(prior, nsamples):
     # Should use attempt on multivariate_normal instead
     min_eig = np.min(np.real(np.linalg.eigvals(covariance)))
     while min_eig < 0:
+        print(Fore.YELLOW)
         print("WARNING: Covariance matrix not positive-semidefinite")
         print(f"Minimum eigenvalue: {min_eig}")
         print("Introducing regulator...")
@@ -89,31 +98,36 @@ def generate_gp(prior, nsamples):
         min_eig = np.min(np.real(np.linalg.eigvals(covariance)))
         print(f"New minimum: {min_eig}")
 
-    # Generate gaussian processes
-    # Break this into ch. decomp etc for progress monitoring/parallelisation
+    return GPPDF(prior, mean, covariance, Q0, flavours, xs)
+
+def sample_gp(gppdf, nsamples):
+    """ Sample the Gaussian Process `gppdf` a total of `nsamples` times and export to file. """
+    # Could Break this into cholesky decomp etc for progress
+    # monitoring/parallelisation
+    print(Fore.GREEN)
     print("Generating GPs")
-    gp_values = np.random.multivariate_normal(mean, covariance, nsamples, 'raise')
+    gp_values = np.random.multivariate_normal(gppdf.mean, gppdf.covariance, nsamples, 'raise')
 
-    # Compute KL divergence
-    print(f'KLD(GP|Prior): {kld(gp_values, pdf_values.T)}')
-
-    outfile = f'GP_{prior}_{len(gp_values)}'
+    outfile = f'GP_{gppdf.prior}_{len(gp_values)}'
     np.savez_compressed(outfile,
-                        prior=prior,
-                        setname=f'GP_{prior}_{len(gp_values)}',
-                        mean=mean,
-                        covariance=covariance, Q0=Q0,
-                        flavours=flavours, xgrid=xs,
+                        prior=gppdf.prior,
+                        setname=outfile,
+                        mean=gppdf.mean,
+                        covariance=gppdf.covariance, Q0=gppdf.Q0,
+                        flavours=gppdf.flavours, xgrid=gppdf.xgrid,
                         samples=gp_values)
     return outfile
 
 
-#TODO x-grid selection, separate out GP definition from sample generation
+#TODO x-grid selection
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("priorpdf", help="prior LHAPDF grid used to generate GP", type=str)
     parser.add_argument("nsamples", help="number of GP samples", type=int)
     args = parser.parse_args()
-    outfile = generate_gp(args.priorpdf, args.nsamples)
+    # Generate the GP from the prior pdf
+    gppdf = generate_gp = generate_gp(args.priorpdf )
+    # Sample the GP and write to file
+    outfile = sample_gp(gppdf, args.nsamples)
     print(f'Results output to {outfile}')
 
