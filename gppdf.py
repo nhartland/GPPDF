@@ -17,10 +17,10 @@
         - The GP covariance function evaluated on the x-grid
         - A numpy array of `nsamples` samples of the GP
 
-    The sample array has shape (`nsamples`, `nx*nf`) where `nx` is the number of
-    points in the sampled x-grid, and `nf` is the number of active flavours in
-    the GP. The x-grid points are currently hardcoded in xg.py, the flavour basis
-    is read from the prior LHAPDF set.
+    The sample array has shape (`nsamples`, `nx*nf`) where `nx` is the number
+    of points in the sampled x-grid, and `nf` is the number of active flavours
+    in the GP. The x-grid points are currently hardcoded in `XGRID`, the
+    flavour basis is read from the prior LHAPDF set.
 """
 
 import lhapdf
