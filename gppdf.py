@@ -64,6 +64,7 @@ def get_active_flavours(pdfset, Q0):
 def generate_gp(prior):
     """ Generate the GP from an input `prior` PDF """
 
+    # Get PDFSet and replicas (split is to avoid replica 0)
     pdfset = lhapdf.getPDFSet(prior)
     replicas  = pdfset.mkPDFs()[1:]
 
