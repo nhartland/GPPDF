@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """ LHAPDF Grid export """
 import os
 import numpy as np
@@ -59,9 +59,11 @@ if len(argv) is not 2:
 script, target = argv
 print(f"Loading archive {target}")
 gpdata = np.load(target)
-print("Printing LHAPDF replicas")
+os.mkdir(f'{gpdata["setname"]}')
 
+print("Printing LHAPDF replicas")
 for igp, gp in enumerate(gpdata["samples"]):
+    print(f'Printing replica {igp}')
     print_lhapdf_replica(igp+1, gpdata, gpdata["samples"][igp])
 print("Printing replica zero and writing header")
 print_lhapdf_replica(0, gpdata, np.mean(gpdata["samples"], axis=0))

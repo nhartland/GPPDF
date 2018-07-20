@@ -12,8 +12,8 @@ import datetime
 plt.style.use('seaborn-colorblind')
 
 # Number of active flavours at initial scale
-labels = {-6: "tbar", -5: "bbar", -4: "cbar", -3: "sbar", -2: "dbar", -1: "ubar",
-          21: "g", 1: "u", 2: "d", 3: "s", 4: "c", 5: "b", 6: "t"}
+labels = {-6: "tbar", -5: "bbar", -4: "cbar", -3: "sbar", -2: "ubar", -1: "dbar",
+          21: "g", 1: "d", 2: "u", 3: "s", 4: "c", 5: "b", 6: "t"}
 
 if len(argv) is not 2:
     print("Usage")
@@ -61,12 +61,13 @@ with PdfPages(f'plt_{gpdata["setname"]}.pdf') as output:
         eslice = error[ipdf*nx:(ipdf+1)*nx]
 
         for ax in fig.get_axes():
+            ax.grid()
             for irep in range(0, ngen_gp):
                 gpslice = gp_values[irep][ipdf*nx:(ipdf+1)*nx]
                 if irep == 0:
-                    ax.plot(xs, gpslice, alpha=0.1, color='b', label="GP Samples")
+                    ax.plot(xs, gpslice, alpha=0.05, color='b', label="GP Samples")
                 else:
-                    ax.plot(xs, gpslice, alpha=0.1, color='b')
+                    ax.plot(xs, gpslice, alpha=0.05, color='b')
             ax.plot(xs, mslice+eslice, color='black', linestyle='--')
             ax.plot(xs, mslice-eslice, color='black', linestyle='--', label="GP 1-sigma")
 
